@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String?
+  provider  String?
+  plan      String   @default("gratuito")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  days      Day[]
+}
+model Day {
+  id             String   @id @default(cuid())
+  date           DateTime
+  grossIncome    Float
+  fuel           Float    @default(0)
+  food           Float    @default(0)
+  maintenance    Float    @default(0)
+  other          Float    @default(0)
+  netIncome      Float
+  hoursWorked    Float?
+  appUsed        String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+}
