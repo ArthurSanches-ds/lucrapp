@@ -15,7 +15,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "LucrApp",
-  description: "Seu painel financeiro",
+  description: "Controle financeiro para motoristas de app",
+  manifest: "/manifest.json",
+  themeColor: "#2d4a2e",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "LucrApp",
+  },
 };
 
 export default function RootLayout({

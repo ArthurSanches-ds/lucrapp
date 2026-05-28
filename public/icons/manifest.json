@@ -1,0 +1,17 @@
+{
+  "name": "LucrApp",
+  "short_name": "LucrApp",
+  "description": "Controle financeiro para motoristas de app",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#2d4a2e",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
