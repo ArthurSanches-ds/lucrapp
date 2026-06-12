@@ -12,32 +12,45 @@ export const authOptions: AuthOptions = {
         password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        try {
+          console.log("AUTH: tentando login para", credentials?.email);
+          
+          if (!credentials?.email || !credentials?.password) {
+            console.log("AUTH: credenciais ausentes");
+            return null;
+          }
+
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
+
+          console.log("AUTH: usuário encontrado?", !!user);
+
+          if (!user || !user.password) {
+            console.log("AUTH: usuário não encontrado ou sem senha");
+            return null;
+          }
+
+          const passwordMatch = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          console.log("AUTH: senha correta?", passwordMatch);
+
+          if (!passwordMatch) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+          };
+        } catch (error) {
+          console.error("AUTH ERROR:", error);
           return null;
         }
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
-
-        if (!user || !user.password) {
-          return null;
-        }
-
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!passwordMatch) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        };
       },
     }),
   ],
