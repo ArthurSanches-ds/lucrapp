@@ -1,14 +1,33 @@
-# LucrApp 🚗💰
+# LucrApp 💰
 
 Painel financeiro para motoristas de aplicativo (Uber, 99, InDriver).
 
-Acesse: [lucrapp-iota.vercel.app](https://lucrapp-iota.vercel.app)
+🔗 **Demo:** [lucrapp-iota.vercel.app](https://lucrapp-iota.vercel.app)
 
 ---
 
-## Sobre o projeto
+## O problema que resolve
 
-O LucrApp permite que motoristas de app registrem sua receita e gastos diários, acompanhem sua evolução mensal e tomem decisões financeiras com base em dados reais.
+Motoristas de app não sabem quanto realmente lucram. Calculam só a receita bruta e esquecem gasolina, alimentação e manutenção. O LucrApp registra tudo e mostra o lucro real do dia, da semana e do mês.
+
+---
+
+## Para quem é
+
+Motoristas de Uber, 99 e InDriver que querem controlar suas finanças de forma simples, direto do celular.
+
+---
+
+## Telas
+
+### Login
+![Login](public/print-login.png)
+
+### Dashboard
+![Dashboard](public/print-dashboard.png)
+
+### Histórico
+![Histórico](public/print-historico.png)
 
 ---
 
@@ -16,25 +35,28 @@ O LucrApp permite que motoristas de app registrem sua receita e gastos diários,
 
 - Cadastro e login com email e senha
 - Dashboard com receita, gastos e lucro do dia
-- Registro diário de corridas e despesas
+- Registro diário com validação de duplicata
 - Edição e exclusão de registros
-- Resumo mensal com filtro por mês e ano
-- Insights automáticos (melhor dia da semana, melhor dia do mês)
+- Filtro por mês e ano
+- Resumo mensal com insights automáticos
+- Melhor dia da semana e melhor dia do mês
 - Tela de perfil com alteração de senha
 - Sistema de planos (Gratuito e Plus)
 - Proteção de rotas autenticadas
 
 ---
 
-## Tecnologias
+## Stack
 
-- [Next.js 16](https://nextjs.org/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Prisma](https://www.prisma.io/)
-- [PostgreSQL](https://www.postgresql.org/) via [Supabase](https://supabase.com/)
-- [NextAuth.js](https://next-auth.js.org/)
-- Deploy na [Vercel](https://vercel.com/)
+| Tecnologia | Uso |
+|---|---|
+| Next.js 16 | Framework fullstack |
+| TypeScript | Tipagem |
+| Tailwind CSS | Estilização |
+| Prisma | ORM |
+| PostgreSQL + Supabase | Banco de dados |
+| NextAuth.js | Autenticação |
+| Vercel | Deploy |
 
 ---
 
@@ -46,7 +68,7 @@ cd lucrapp
 npm install
 ```
 
-Crie um arquivo `.env` na raiz com as variáveis:
+Crie um arquivo `.env` na raiz:
 
 ```env
 DATABASE_URL=
@@ -57,13 +79,9 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-Depois rode:
-
 ```bash
 npm run dev
 ```
-
-Acesse [http://localhost:3000](http://localhost:3000)
 
 ---
 
