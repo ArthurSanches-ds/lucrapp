@@ -40,11 +40,27 @@ export default function DashboardPage() {
   const [editHoras, setEditHoras] = useState("");
   const [editAppUsado, setEditAppUsado] = useState("");
   const [mensagemSucesso, setMensagemSucesso] = useState("");
+  const hoje = new Date();
+  const [mesSelecionado, setMesSelecionado] = useState(hoje.getMonth() + 1);
+  const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear());
+
+  const meses = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
 
   function mostrarSucesso(msg: string) {
-  setMensagemSucesso(msg);
-  setTimeout(() => setMensagemSucesso(""), 3000);
-}
+    setMensagemSucesso(msg);
+    setTimeout(() => setMensagemSucesso(""), 3000);
+  }
+
+  async function carregarHistorico(mes: number, ano: number) {
+    const res = await fetch(`/api/day/history?mes=${mes}&ano=${ano}`);
+    if (res.ok) {
+      const data = await res.json();
+      setHistorico(data);
+    }
+  }
 
   useEffect(() => {
     async function carregarDados() {
@@ -58,25 +74,13 @@ export default function DashboardPage() {
         }
       }
     }
-    async function carregarHistorico() {
-      const res = await fetch("/api/day/history");
-      if (res.ok) {
-        const data = await res.json();
-        setHistorico(data);
-      }
-    }
     async function carregarSemana() {
-      const res = await fetch("/api/day/history");
+      const res = await fetch(`/api/day/history?mes=${mesSelecionado}&ano=${anoSelecionado}`);
       if (res.ok) {
         const data = await res.json();
-        const hoje = new Date();
-        const inicioSemana = new Date(hoje);
-        inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-        inicioSemana.setHours(0, 0, 0, 0);
-        const diasSemana = data.filter((d: any) => new Date(d.date) >= inicioSemana);
-        const totalReceita = diasSemana.reduce((acc: number, d: any) => acc + d.grossIncome, 0);
-        const totalGastos = diasSemana.reduce((acc: number, d: any) => acc + d.fuel + d.food + d.maintenance + d.other, 0);
-        const totalLucro = diasSemana.reduce((acc: number, d: any) => acc + d.netIncome, 0);
+        const totalReceita = data.reduce((acc: number, d: any) => acc + d.grossIncome, 0);
+        const totalGastos = data.reduce((acc: number, d: any) => acc + d.fuel + d.food + d.maintenance + d.other, 0);
+        const totalLucro = data.reduce((acc: number, d: any) => acc + d.netIncome, 0);
         setReceitaSemana(totalReceita);
         setGastosSemana(totalGastos);
         setLucroSemana(totalLucro);
@@ -93,20 +97,20 @@ export default function DashboardPage() {
       }
     }
     async function carregarPlano() {
-  const res = await fetch("/api/user/plan");
-  if (res.ok) {
-    const data = await res.json();
-    setPlano(data.plan);
-  }
-}
+      const res = await fetch("/api/user/plan");
+      if (res.ok) {
+        const data = await res.json();
+        setPlano(data.plan);
+      }
+    }
     if (session) {
       carregarDados();
-      carregarHistorico();
+      carregarHistorico(mesSelecionado, anoSelecionado);
       carregarSemana();
       carregarMes();
       carregarPlano();
     }
-  }, [session]);
+  }, [session, mesSelecionado, anoSelecionado]);
 
   async function handleSalvar() {
     setLoading(true);
@@ -121,11 +125,7 @@ export default function DashboardPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        grossIncome: r,
-        fuel: g,
-        food: a,
-        maintenance: m,
-        other: o,
+        grossIncome: r, fuel: g, food: a, maintenance: m, other: o,
         hoursWorked: parseFloat(horas) || null,
         appUsed: appUsado || null,
       }),
@@ -143,30 +143,9 @@ export default function DashboardPage() {
     setGastosHoje(totalGastos);
     setLucroHoje(lucro);
     setModalAberto(false);
-    setReceita("");
-    setGasolina("");
-    setAlimentacao("");
-    setManutencao("");
-    setOutros("");
-  setHoras("");
-    setAppUsado("");
+    setReceita(""); setGasolina(""); setAlimentacao(""); setManutencao(""); setOutros(""); setHoras(""); setAppUsado("");
     mostrarSucesso("Dia registrado com sucesso!");
-
-    const resHistorico = await fetch("/api/day/history");
-    if (resHistorico.ok) {
-      const data = await resHistorico.json();
-      setHistorico(data);
-
-      const hoje = new Date();
-      const inicioSemana = new Date(hoje);
-      inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-      inicioSemana.setHours(0, 0, 0, 0);
-      const diasSemana = data.filter((d: any) => new Date(d.date) >= inicioSemana);
-      setReceitaSemana(diasSemana.reduce((acc: number, d: any) => acc + d.grossIncome, 0));
-      setGastosSemana(diasSemana.reduce((acc: number, d: any) => acc + d.fuel + d.food + d.maintenance + d.other, 0));
-      setLucroSemana(diasSemana.reduce((acc: number, d: any) => acc + d.netIncome, 0));
-    }
-
+    carregarHistorico(mesSelecionado, anoSelecionado);
     const resMes = await fetch("/api/day/monthly");
     if (resMes.ok) {
       const dataMes = await resMes.json();
@@ -190,29 +169,17 @@ export default function DashboardPage() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        id: idEditando,
-        grossIncome: r,
-        fuel: g,
-        food: a,
-        maintenance: m,
-        other: o,
+        id: idEditando, grossIncome: r, fuel: g, food: a, maintenance: m, other: o,
         hoursWorked: parseFloat(editHoras) || null,
         appUsed: editAppUsado || null,
       }),
     });
     setLoadingEdit(false);
-    if (!res.ok) {
-      alert("Erro ao editar. Tente novamente.");
-      return;
-    }
+    if (!res.ok) { alert("Erro ao editar. Tente novamente."); return; }
     setModalEditAberto(false);
     setDiaEditando(null);
     mostrarSucesso("Registro atualizado com sucesso!");
-    const resHistorico = await fetch("/api/day/history");
-    if (resHistorico.ok) {
-      const data = await resHistorico.json();
-      setHistorico(data);
-    }
+    carregarHistorico(mesSelecionado, anoSelecionado);
     const resHoje = await fetch("/api/day/today");
     if (resHoje.ok) {
       const dataHoje = await resHoje.json();
@@ -239,42 +206,29 @@ export default function DashboardPage() {
     setEditAppUsado(dia.appUsed || "");
     setModalEditAberto(true);
   }
+
   async function handleDeletar(id: string) {
-  if (!confirm("Tem certeza que deseja deletar este registro?")) return;
-
-  const res = await fetch("/api/day", {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id }),
-  });
-
-  if (!res.ok) {
-    alert("Erro ao deletar. Tente novamente.");
-    return;
-  }
-
-  const resHistorico = await fetch("/api/day/history");
-  if (resHistorico.ok) {
-    const data = await resHistorico.json();
-    setHistorico(data);
-  }
-
-  const resHoje = await fetch("/api/day/today");
-  if (resHoje.ok) {
-    const dataHoje = await resHoje.json();
-    if (dataHoje) {
-      setReceitaHoje(dataHoje.grossIncome);
-      setGastosHoje(dataHoje.fuel + dataHoje.food + dataHoje.maintenance + dataHoje.other);
-      setLucroHoje(dataHoje.netIncome);
-    } else {
-      setReceitaHoje(0);
-      setGastosHoje(0);
-      setLucroHoje(0);
+    if (!confirm("Tem certeza que deseja deletar este registro?")) return;
+    const res = await fetch("/api/day", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) { alert("Erro ao deletar. Tente novamente."); return; }
+    carregarHistorico(mesSelecionado, anoSelecionado);
+    const resHoje = await fetch("/api/day/today");
+    if (resHoje.ok) {
+      const dataHoje = await resHoje.json();
+      if (dataHoje) {
+        setReceitaHoje(dataHoje.grossIncome);
+        setGastosHoje(dataHoje.fuel + dataHoje.food + dataHoje.maintenance + dataHoje.other);
+        setLucroHoje(dataHoje.netIncome);
+      } else {
+        setReceitaHoje(0); setGastosHoje(0); setLucroHoje(0);
+      }
     }
+    mostrarSucesso("Registro deletado com sucesso!");
   }
-
-  mostrarSucesso("Registro deletado com sucesso!");
-}
 
   return (
     <div className="min-h-screen" style={{backgroundColor: '#0a0a0a'}}>
@@ -318,7 +272,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-     <div className="px-6 mb-4">
+      <div className="px-6 mb-4">
         <p className="text-xs mb-2" style={{color: '#a1a1aa'}}>Esta semana</p>
         {plano === "pago" ? (
           <div className="grid grid-cols-3 gap-4">
@@ -338,9 +292,7 @@ export default function DashboardPage() {
         ) : (
           <div className="rounded-xl p-4 flex items-center justify-between" style={{backgroundColor: '#111111', border: '1px solid #2a2a2a'}}>
             <p className="text-sm" style={{color: '#a1a1aa'}}>Disponível no plano Plus</p>
-            <span className="text-xs px-3 py-1 rounded-lg font-medium" style={{backgroundColor: '#3d5a3e', color: '#ffffff'}}>
-              Upgrade
-            </span>
+            <span className="text-xs px-3 py-1 rounded-lg font-medium" style={{backgroundColor: '#3d5a3e', color: '#ffffff'}}>Upgrade</span>
           </div>
         )}
       </div>
@@ -367,16 +319,36 @@ export default function DashboardPage() {
         ) : (
           <div className="rounded-xl p-4 flex items-center justify-between" style={{backgroundColor: '#111111', border: '1px solid #2a2a2a'}}>
             <p className="text-sm" style={{color: '#a1a1aa'}}>Disponível no plano Plus</p>
-            <span className="text-xs px-3 py-1 rounded-lg font-medium" style={{backgroundColor: '#3d5a3e', color: '#ffffff'}}>
-              Upgrade
-            </span>
+            <span className="text-xs px-3 py-1 rounded-lg font-medium" style={{backgroundColor: '#3d5a3e', color: '#ffffff'}}>Upgrade</span>
           </div>
         )}
       </div>
 
+      {/* FILTRO DE MÊS */}
+      <div className="px-6 mb-4 flex items-center gap-3">
+        <select
+          value={mesSelecionado}
+          onChange={(e) => setMesSelecionado(parseInt(e.target.value))}
+          className="rounded-lg px-3 py-2 text-sm outline-none text-white"
+          style={{backgroundColor: '#111111', border: '1px solid #2a2a2a'}}>
+          {meses.map((m, i) => (
+            <option key={i + 1} value={i + 1}>{m}</option>
+          ))}
+        </select>
+        <select
+          value={anoSelecionado}
+          onChange={(e) => setAnoSelecionado(parseInt(e.target.value))}
+          className="rounded-lg px-3 py-2 text-sm outline-none text-white"
+          style={{backgroundColor: '#111111', border: '1px solid #2a2a2a'}}>
+          {[2024, 2025, 2026, 2027].map((a) => (
+            <option key={a} value={a}>{a}</option>
+          ))}
+        </select>
+      </div>
+
       {historico.length > 0 && (
         <div className="px-6 mb-6">
-          <p className="text-xs mb-3" style={{color: '#a1a1aa'}}>Evolução da semana</p>
+          <p className="text-xs mb-3" style={{color: '#a1a1aa'}}>Evolução do período</p>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={[...historico].reverse().map((dia) => ({
               nome: new Date(dia.date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" }),
@@ -412,16 +384,16 @@ export default function DashboardPage() {
 
       {historico.length > 0 && (
         <div className="px-6 mt-6">
-          <h2 className="text-sm font-semibold mb-3" style={{color: '#a1a1aa'}}>Histórico recente</h2>
+          <h2 className="text-sm font-semibold mb-3" style={{color: '#a1a1aa'}}>
+            Histórico — {meses[mesSelecionado - 1]} {anoSelecionado}
+          </h2>
           <div className="flex flex-col gap-3">
             {historico.map((dia) => (
               <div key={dia.id} className="rounded-xl p-4 flex justify-between items-center"
                 style={{backgroundColor: '#111111'}}>
                 <div>
                   <p className="text-xs mb-1" style={{color: '#a1a1aa'}}>
-                    {new Date(dia.date).toLocaleDateString("pt-BR", {
-                      weekday: "short", day: "2-digit", month: "2-digit"
-                    })}
+                    {new Date(dia.date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })}
                   </p>
                   <p className="text-sm text-white font-medium">
                     Receita: {dia.grossIncome.toLocaleString("pt-BR", {style: "currency", currency: "BRL"})}
@@ -434,7 +406,7 @@ export default function DashboardPage() {
                       {dia.netIncome.toLocaleString("pt-BR", {style: "currency", currency: "BRL"})}
                     </p>
                   </div>
-                 <button onClick={() => abrirEdicao(dia)}
+                  <button onClick={() => abrirEdicao(dia)}
                     className="text-xs px-3 py-1 rounded-lg transition"
                     style={{backgroundColor: '#1a3a4a', color: '#a1a1aa'}}>
                     Editar
@@ -467,8 +439,7 @@ export default function DashboardPage() {
               ].map((campo) => (
                 <div key={campo.label}>
                   <label className="text-xs mb-1 block" style={{color: '#a1a1aa'}}>{campo.label}</label>
-                  <input type="number" placeholder="0,00"
-                    value={campo.value}
+                  <input type="number" placeholder="0,00" value={campo.value}
                     onChange={(e) => campo.set(e.target.value)}
                     className="w-full rounded-lg px-4 py-3 outline-none text-white text-sm"
                     style={{backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a'}}
@@ -520,8 +491,7 @@ export default function DashboardPage() {
               ].map((campo) => (
                 <div key={campo.label}>
                   <label className="text-xs mb-1 block" style={{color: '#a1a1aa'}}>{campo.label}</label>
-                  <input type="number" placeholder="0,00"
-                    value={campo.value}
+                  <input type="number" placeholder="0,00" value={campo.value}
                     onChange={(e) => campo.set(e.target.value)}
                     className="w-full rounded-lg px-4 py-3 outline-none text-white text-sm"
                     style={{backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a'}}

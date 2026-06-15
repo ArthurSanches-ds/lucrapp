@@ -3,14 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: "Não autorizado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -18,24 +15,30 @@ const session = await getServerSession(authOptions);
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "Usuário não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const mes = searchParams.get("mes");
+    const ano = searchParams.get("ano");
+
+    let where: any = { userId: user.id };
+
+    if (mes && ano) {
+      const inicio = new Date(parseInt(ano), parseInt(mes) - 1, 1);
+      const fim = new Date(parseInt(ano), parseInt(mes), 0, 23, 59, 59, 999);
+      where.date = { gte: inicio, lte: fim };
     }
 
     const registros = await prisma.day.findMany({
-      where: { userId: user.id },
+      where,
       orderBy: { date: "desc" },
-      take: 7,
+      take: mes && ano ? undefined : 30,
     });
 
     return NextResponse.json(registros);
   } catch (error) {
     console.error("ERRO AO BUSCAR HISTÓRICO:", error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
