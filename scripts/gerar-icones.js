@@ -1,28 +1,30 @@
 const sharp = require('sharp');
-const fs = require('fs');
-
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680">
-  <rect width="680" height="680" fill="#0a0a0a" rx="120"/>
-  <rect x="20" y="20" width="640" height="640" fill="none" stroke="#1a3a4a" stroke-width="12" rx="104"/>
-  <rect x="32" y="32" width="616" height="616" fill="none" stroke="#1a3a4a" stroke-width="4" rx="96" opacity="0.5"/>
-  <circle cx="340" cy="190" r="52" fill="#1a3a4a"/>
-  <text x="340" y="207" text-anchor="middle" font-family="Arial, sans-serif" font-size="52" font-weight="900" fill="#3d5a3e">$</text>
-  <text x="340" y="390" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="120" font-weight="900" fill="#3d5a3e" letter-spacing="-4">Lucr</text>
-  <text x="340" y="510" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="120" font-weight="900" fill="#3d5a3e" letter-spacing="-4">App</text>
-  <line x1="160" y1="415" x2="520" y2="415" stroke="#1a3a4a" stroke-width="2" opacity="0.6"/>
-</svg>`;
-
-const svgBuffer = Buffer.from(svg);
-
-const tamanhos = [192, 512];
 
 async function gerarIcones() {
-  for (const tamanho of tamanhos) {
-    await sharp(svgBuffer)
-      .resize(tamanho, tamanho)
+  const tamanhos = [192, 512];
+
+  for (const size of tamanhos) {
+    const metade = size / 2;
+    const raio = size * 0.15;
+    const stroke = size * 0.03;
+    const circulo = size * 0.12;
+    const fontSize = size * 0.28;
+    const fontSizeSifrao = size * 0.13;
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <rect width="${size}" height="${size}" fill="#0a0a0a" rx="${raio}"/>
+      <rect x="${stroke}" y="${stroke}" width="${size - stroke * 2}" height="${size - stroke * 2}" fill="none" stroke="#1a3a4a" stroke-width="${stroke}" rx="${raio * 0.85}"/>
+      <circle cx="${metade}" cy="${size * 0.28}" r="${circulo}" fill="#1a3a4a"/>
+      <rect x="${size * 0.2}" y="${size * 0.45}" width="${size * 0.6}" height="${fontSize}" fill="#3d5a3e" rx="4"/>
+      <rect x="${size * 0.2}" y="${size * 0.62}" width="${size * 0.6}" height="${fontSize * 0.6}" fill="#3d5a3e" rx="4"/>
+    </svg>`;
+
+    await sharp(Buffer.from(svg))
+      .resize(size, size)
       .png()
-      .toFile(`public/icons/icon-${tamanho}.png`);
-    console.log(`Gerado: icon-${tamanho}.png`);
+      .toFile(`public/icons/icon-${size}.png`);
+
+    console.log(`Gerado: icon-${size}.png`);
   }
 }
 
