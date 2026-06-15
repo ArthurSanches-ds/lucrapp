@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function DashboardPage() {
   const [modalAberto, setModalAberto] = useState(false);
@@ -346,33 +345,71 @@ export default function DashboardPage() {
         </select>
       </div>
 
-      {historico.length > 0 && (
-        <div className="px-6 mb-6">
-          <p className="text-xs mb-3" style={{color: '#a1a1aa'}}>Evolução do período</p>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={[...historico].reverse().map((dia) => ({
-              nome: new Date(dia.date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" }),
-              Receita: dia.grossIncome,
-              Gasolina: dia.fuel,
-              Alimentação: dia.food,
-              Outros: dia.maintenance + dia.other,
-            }))}>
-              <XAxis dataKey="nome" tick={{ fill: '#a1a1aa', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#a1a1aa', fontSize: 11 }} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8 }}
-                labelStyle={{ color: '#ffffff' }}
-                itemStyle={{ color: '#a1a1aa' }}
-              />
-              <Legend wrapperStyle={{ color: '#a1a1aa', fontSize: 12 }} />
-              <Bar dataKey="Receita" fill="#3d5a3e" radius={[4,4,0,0]} />
-              <Bar dataKey="Gasolina" fill="#1a3a4a" radius={[4,4,0,0]} />
-              <Bar dataKey="Alimentação" fill="#4a3a1a" radius={[4,4,0,0]} />
-              <Bar dataKey="Outros" fill="#3a1a1a" radius={[4,4,0,0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+ {historico.length > 0 && (() => {
+        const totalReceita = historico.reduce((acc, d) => acc + d.grossIncome, 0);
+        const totalGastos = historico.reduce((acc, d) => acc + d.fuel + d.food + d.maintenance + d.other, 0);
+        const totalLucro = historico.reduce((acc, d) => acc + d.netIncome, 0);
+        const mediaDiaria = totalLucro / historico.length;
+
+        const melhorDia = historico.reduce((melhor, d) => d.grossIncome > melhor.grossIncome ? d : melhor, historico[0]);
+        const melhorDiaSemana = (() => {
+          const dias = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+          const totais: Record<string, number> = {};
+          historico.forEach((d) => {
+            const dia = dias[new Date(d.date).getDay()];
+            totais[dia] = (totais[dia] || 0) + d.grossIncome;
+          });
+          return Object.entries(totais).sort((a, b) => b[1] - a[1])[0]?.[0];
+        })();
+
+        return (
+          <div className="px-6 mb-6">
+            <p className="text-xs mb-3 font-semibold uppercase tracking-wider" style={{color: '#a1a1aa'}}>
+              Resumo — {meses[mesSelecionado - 1]} {anoSelecionado}
+            </p>
+            <div className="rounded-xl p-5 flex flex-col gap-4" style={{backgroundColor: '#111111'}}>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-xs mb-1" style={{color: '#a1a1aa'}}>Receita</p>
+                  <p className="text-base font-bold text-white">{formatarMoeda(totalReceita)}</p>
+                </div>
+                <div>
+                  <p className="text-xs mb-1" style={{color: '#a1a1aa'}}>Gastos</p>
+                  <p className="text-base font-bold text-white">{formatarMoeda(totalGastos)}</p>
+                </div>
+                <div>
+                  <p className="text-xs mb-1" style={{color: '#a1a1aa'}}>Lucro</p>
+                  <p className="text-base font-bold" style={{color: '#3d5a3e'}}>{formatarMoeda(totalLucro)}</p>
+                </div>
+              </div>
+
+              <div style={{borderTop: '1px solid #1a1a1a', paddingTop: 16}} className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs mb-1" style={{color: '#a1a1aa'}}>Dias trabalhados</p>
+                  <p className="text-base font-bold text-white">{historico.length} dias</p>
+                </div>
+                <div>
+                  <p className="text-xs mb-1" style={{color: '#a1a1aa'}}>Média diária</p>
+                  <p className="text-base font-bold" style={{color: '#3d5a3e'}}>{formatarMoeda(mediaDiaria)}</p>
+                </div>
+              </div>
+
+              <div style={{borderTop: '1px solid #1a1a1a', paddingTop: 16}} className="flex flex-col gap-3">
+                <div className="rounded-lg px-4 py-3" style={{backgroundColor: '#1a2a1a'}}>
+                  <p className="text-xs mb-1" style={{color: '#a1a1aa'}}>🏆 Melhor dia da semana</p>
+                  <p className="text-sm font-bold" style={{color: '#3d5a3e'}}>{melhorDiaSemana} é seu dia mais lucrativo</p>
+                </div>
+                <div className="rounded-lg px-4 py-3" style={{backgroundColor: '#1a1a2a'}}>
+                  <p className="text-xs mb-1" style={{color: '#a1a1aa'}}>⭐ Melhor dia do mês</p>
+                  <p className="text-sm font-bold text-white">
+                    {new Date(melhorDia.date).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit" })} — {formatarMoeda(melhorDia.grossIncome)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="px-6">
         <button onClick={() => setModalAberto(true)}
